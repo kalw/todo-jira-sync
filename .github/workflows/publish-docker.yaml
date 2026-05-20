@@ -17,7 +17,7 @@ jobs:
       contents: read
       packages: write  # push to GitHub Container Registry
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0  # so setuptools-scm can resolve the version
 
