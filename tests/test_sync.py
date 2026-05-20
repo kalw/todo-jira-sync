@@ -33,12 +33,7 @@ def _sync(text, jira, state=None, **kw):
 
 def test_create_pushes_full_hierarchy_with_parents():
     jira = FakeJira()
-    text = (
-        "Website:\n"
-        f"  Auth:\n"
-        f"    {BOX} Login\n"
-        f"      {BOX} Google\n"
-    )
+    text = f"Website:\n  Auth:\n    {BOX} Login\n      {BOX} Google\n"
     res = _sync(text, jira)
     ops = [c[0] for c in jira.calls]
     assert ops.count("create") == 4
@@ -187,9 +182,7 @@ def test_push_direction_does_not_pull():
     jira = FakeJira()
     jira.seed("WEB-1", "jira changed", issue_type="Task")
     state = SyncState("WEB", {"WEB-1": BaseEntry("base", "todo", "task")})
-    res = _sync(
-        f"P:\n  {BOX} base @jira(WEB-1)\n", jira, state, direction="push"
-    )
+    res = _sync(f"P:\n  {BOX} base @jira(WEB-1)\n", jira, state, direction="push")
     # push-only: todo wins, jira overwritten, todo text keeps local value
     assert jira.issues["WEB-1"].summary == "base"
     assert "jira changed" not in res.todo_text
@@ -200,9 +193,7 @@ def test_full_cycle_is_stable():
     jira = FakeJira()
     text = f"Epic:\n  Story:\n    {BOX} Task\n      {BOX} Sub\n"
     res1 = _sync(text, jira)
-    res2 = sync(
-        res1.todo_text, project="WEB", client=jira, state=res1.state, now_fn=CLOCK
-    )
+    res2 = sync(res1.todo_text, project="WEB", client=jira, state=res1.state, now_fn=CLOCK)
     mutating = [a for a in res2.actions if a.op not in ("JIRA_GONE",)]
     assert mutating == [], f"unexpected second-pass actions: {mutating}"
 

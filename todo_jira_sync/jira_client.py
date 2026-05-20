@@ -49,8 +49,7 @@ def kind_from_type(type_name: str, cfg: FormatConfig) -> NodeKind:
 class JiraClient(Protocol):
     """The capabilities the sync engine needs from Jira."""
 
-    def search_issues(self, project: str) -> list[JiraIssue]:
-        ...
+    def search_issues(self, project: str) -> list[JiraIssue]: ...
 
     def create_issue(
         self,
@@ -63,8 +62,7 @@ class JiraClient(Protocol):
         """Create an issue and return its new key."""
         ...
 
-    def update_summary(self, key: str, summary: str) -> None:
-        ...
+    def update_summary(self, key: str, summary: str) -> None: ...
 
     def set_status(self, key: str, status: Status) -> None:
         """Transition the issue so it ends in the desired status."""
@@ -109,13 +107,9 @@ class RestJiraClient:
         return f"{self.base_url}/rest/api/3{path}"
 
     def _request(self, method: str, path: str, **kwargs):
-        resp = self._session.request(
-            method, self._url(path), timeout=self.timeout, **kwargs
-        )
+        resp = self._session.request(method, self._url(path), timeout=self.timeout, **kwargs)
         if resp.status_code >= 400:
-            raise JiraError(
-                f"{method} {path} -> {resp.status_code}: {resp.text[:500]}"
-            )
+            raise JiraError(f"{method} {path} -> {resp.status_code}: {resp.text[:500]}")
         return resp
 
     # -- protocol ----------------------------------------------------------
@@ -183,18 +177,14 @@ class RestJiraClient:
         target = self._pick_transition(key, status)
         if target is None:
             raise JiraError(f"No transition to status {status.value} for {key}.")
-        self._request(
-            "POST", f"/issue/{key}/transitions", json={"transition": {"id": target}}
-        )
+        self._request("POST", f"/issue/{key}/transitions", json={"transition": {"id": target}})
 
     def _pick_transition(self, key: str, status: Status) -> str | None:
         data = self._request("GET", f"/issue/{key}/transitions").json()
         transitions = data.get("transitions", [])
 
         def category_of(t: dict) -> str:
-            return ((t.get("to", {}) or {}).get("statusCategory", {}) or {}).get(
-                "key", ""
-            )
+            return ((t.get("to", {}) or {}).get("statusCategory", {}) or {}).get("key", "")
 
         def name_of(t: dict) -> str:
             return (t.get("to", {}) or {}).get("name", "")

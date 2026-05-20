@@ -22,7 +22,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 
-from .config import CONFLICT_JIRA, CONFLICT_SKIP, CONFLICT_TODO, FormatConfig
+from .config import CONFLICT_JIRA, CONFLICT_TODO, FormatConfig
 from .jira_client import JiraClient, issue_type_name, kind_from_type
 from .models import JiraIssue, Node, NodeKind, Status
 from .state import BaseEntry, SyncState
@@ -126,19 +126,23 @@ def sync(
         issue = jira_by_key.get(key)
         if issue is None:
             if key in state.entries and direction in ("both", "pull"):
-                actions.append(
-                    Action("JIRA_GONE", key, "missing in Jira; kept locally")
-                )
+                actions.append(Action("JIRA_GONE", key, "missing in Jira; kept locally"))
             elif key not in state.entries:
-                actions.append(
-                    Action("JIRA_GONE", key, "unknown key; kept locally")
-                )
+                actions.append(Action("JIRA_GONE", key, "unknown key; kept locally"))
             new_entries.setdefault(key, _entry_from_node(node))
             continue
         base = state.entries.get(key)
         _reconcile_pair(
-            node, issue, base, cfg, direction, client, dry_run, actions,
-            new_entries, now_fn,
+            node,
+            issue,
+            base,
+            cfg,
+            direction,
+            client,
+            dry_run,
+            actions,
+            new_entries,
+            now_fn,
         )
 
     # ------------------------------------------------------------------ #
@@ -146,9 +150,7 @@ def sync(
     # ------------------------------------------------------------------ #
     if direction in ("both", "pull"):
         missing = [i for i in jira_issues if i.key not in todo_by_key]
-        _pull_missing(
-            missing, root, todo_by_key, state, cfg, dry_run, actions, new_entries
-        )
+        _pull_missing(missing, root, todo_by_key, state, cfg, dry_run, actions, new_entries)
 
     # ------------------------------------------------------------------ #
     # Finalise
@@ -170,9 +172,7 @@ def _resolve_parent_key(node: Node) -> str | None:
         task = node.nearest_ancestor(NodeKind.TASK)
         return task.jira_key if task else None
     if node.kind in (NodeKind.STORY, NodeKind.TASK):
-        container = node.nearest_ancestor(
-            NodeKind.EPIC, NodeKind.STORY, NodeKind.TASK
-        )
+        container = node.nearest_ancestor(NodeKind.EPIC, NodeKind.STORY, NodeKind.TASK)
         return container.jira_key if container else None
     return None
 
@@ -240,9 +240,7 @@ def _reconcile_pair(
     )
 
 
-def _merge_field(
-    *, kind, key, todo_val, jira_val, base_val, cfg, direction, actions, push, pull
-):
+def _merge_field(*, kind, key, todo_val, jira_val, base_val, cfg, direction, actions, push, pull):
     """Return the agreed value and perform the side effect for one field."""
     push_op = {"summary": "UPDATE_SUMMARY", "status": "SET_STATUS"}[kind]
     pull_op = {"summary": "PULL_SUMMARY", "status": "PULL_STATUS"}[kind]
@@ -282,7 +280,11 @@ def _merge_field(
         return todo_val
     # CONFLICT_SKIP: leave both, preserve the old baseline for re-detection
     actions.append(
-        Action("CONFLICT", key, f"{kind}: skipped (todo={_fmt(kind, todo_val)} jira={_fmt(kind, jira_val)})")
+        Action(
+            "CONFLICT",
+            key,
+            f"{kind}: skipped (todo={_fmt(kind, todo_val)} jira={_fmt(kind, jira_val)})",
+        )
     )
     return base_val
 
@@ -307,9 +309,7 @@ def _set_status(node: Node, value: Status, now_fn) -> None:
         node.finished_at = None
 
 
-def _pull_missing(
-    missing, root, todo_by_key, state, cfg, dry_run, actions, new_entries
-) -> None:
+def _pull_missing(missing, root, todo_by_key, state, cfg, dry_run, actions, new_entries) -> None:
     """Insert Jira issues that are absent from the todo file."""
     pending: list[JiraIssue] = []
     for issue in missing:
@@ -327,7 +327,11 @@ def _pull_missing(
         for issue in pending:
             kind = kind_from_type(issue.issue_type, cfg)
             parent_node = todo_by_key.get(issue.parent_key) if issue.parent_key else None
-            if issue.parent_key and parent_node is None and issue.parent_key in {i.key for i in pending}:
+            if (
+                issue.parent_key
+                and parent_node is None
+                and issue.parent_key in {i.key for i in pending}
+            ):
                 still.append(issue)  # parent will appear in a later wave
                 continue
             node = Node(kind=kind, title=issue.summary, status=issue.status, jira_key=issue.key)

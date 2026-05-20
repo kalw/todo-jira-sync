@@ -52,7 +52,7 @@ def _match_leading_symbol(body: str, symbols: list[str]) -> str | None:
         if body == sym:
             return sym
         if body.startswith(sym):
-            rest = body[len(sym):]
+            rest = body[len(sym) :]
             if rest[:1] in (" ", "\t"):
                 return sym
     return None
@@ -129,11 +129,9 @@ def parse(text: str, cfg: FormatConfig | None = None) -> Node:
             # Pop to the real parent *first*; only then can we tell whether this
             # task is scaffolded under another task (-> Sub-task) or a project.
             parent = _pop_to_parent(stack, width)
-            content = left_stripped[len(sym):].strip()
+            content = left_stripped[len(sym) :].strip()
             title, managed, preserved = _extract_tags(content)
-            ancestor_is_task = any(
-                n.kind in (NodeKind.TASK, NodeKind.SUBTASK) for n in stack[1:]
-            )
+            ancestor_is_task = any(n.kind in (NodeKind.TASK, NodeKind.SUBTASK) for n in stack[1:])
             kind = NodeKind.SUBTASK if ancestor_is_task else NodeKind.TASK
             node = Node(
                 kind=kind,
@@ -194,9 +192,7 @@ def resolve_jira_parents(root: Node, cfg: FormatConfig) -> None:
             task = node.nearest_ancestor(NodeKind.TASK)
             node.jira_parent_key = task.jira_key if task else None
         else:  # STORY or TASK -> nearest enclosing container
-            container = node.nearest_ancestor(
-                NodeKind.EPIC, NodeKind.STORY, NodeKind.TASK
-            )
+            container = node.nearest_ancestor(NodeKind.EPIC, NodeKind.STORY, NodeKind.TASK)
             node.jira_parent_key = container.jira_key if container else None
 
 

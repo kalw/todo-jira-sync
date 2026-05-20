@@ -52,9 +52,7 @@ class SyncState:
         if not path.exists():
             return cls.empty(project)
         data = json.loads(path.read_text(encoding="utf-8"))
-        entries = {
-            key: BaseEntry(**entry) for key, entry in data.get("entries", {}).items()
-        }
+        entries = {key: BaseEntry(**entry) for key, entry in data.get("entries", {}).items()}
         return cls(
             project=data.get("project", project),
             entries=entries,

@@ -42,7 +42,10 @@ class FakeJira:
     # -- helpers for tests -------------------------------------------------
     def seed(self, key, summary, status=Status.TODO, issue_type="Task", parent_key=None):
         self.issues[key] = JiraIssue(
-            key=key, summary=summary, status=status, issue_type=issue_type,
+            key=key,
+            summary=summary,
+            status=status,
+            issue_type=issue_type,
             parent_key=parent_key,
         )
         n = int(key.split("-")[-1])
