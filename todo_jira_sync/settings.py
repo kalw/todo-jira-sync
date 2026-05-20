@@ -43,7 +43,9 @@ class Settings(BaseSettings):
     jira_url: str = Field(default="", description="Base URL, e.g. https://acme.atlassian.net")
     jira_email: str | None = Field(default=None, description="Account email (Basic auth)")
     jira_api_token: str = Field(default="", description="API token or PAT")
-    jira_auth: str = Field(default="basic", description="'basic' (Cloud) or 'bearer' (Server/DC PAT)")
+    jira_auth: str = Field(
+        default="basic", description="'basic' (Cloud) or 'bearer' (Server/DC PAT)"
+    )
 
     # --- what to sync -----------------------------------------------------
     jira_project: str = Field(default="", description="Project key, e.g. WEB")
@@ -91,4 +93,6 @@ class Settings(BaseSettings):
         missing = [n for n in names if not getattr(self, n)]
         if missing:
             joined = ", ".join(m.upper() for m in missing)
-            raise SystemExit(f"Missing required configuration: {joined} (set it in .env or the environment)")
+            raise SystemExit(
+                f"Missing required configuration: {joined} (set it in .env or the environment)"
+            )

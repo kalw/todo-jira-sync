@@ -9,7 +9,7 @@ environment), but the engine only ever sees this plain dataclass.
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 # Conflict resolution strategies when both sides changed the same field.
 CONFLICT_JIRA = "jira"  # Jira wins

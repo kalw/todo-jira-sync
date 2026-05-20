@@ -64,5 +64,5 @@ whose entrypoint is the `todo-jira-sync` CLI. Versioning is `setuptools-scm`
 (git tags); pass `--build-arg VERSION=...` to the Docker build since the build
 context has no `.git`. GitHub Actions: `ci.yaml` (ruff + mypy + pytest, py3.10
 –3.14), `publish-pypi.yaml` (sdist/wheel to PyPI via OIDC on `v*` tags) and
-`publish-docker.yaml` (multi-arch image to GHCR on `main` and `v*` tags).
+`publish-docker.yaml` (multi-arch image to GHCR on `v*` tags / manual dispatch).
 Dependabot tracks pip, github-actions and docker.

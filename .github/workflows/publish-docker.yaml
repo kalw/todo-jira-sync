@@ -2,9 +2,9 @@ name: Publish container
 
 on:
   push:
-    branches: [main]
     tags:
       - "v*"
+  workflow_dispatch:
 
 env:
   REGISTRY: ghcr.io
