@@ -37,7 +37,7 @@ class SyncState:
     version: int = STATE_VERSION
 
     @classmethod
-    def empty(cls, project: str) -> "SyncState":
+    def empty(cls, project: str) -> SyncState:
         return cls(project=project, entries={})
 
     # -- persistence --------------------------------------------------------
@@ -47,7 +47,7 @@ class SyncState:
         return p.with_name(p.name + STATE_SUFFIX)
 
     @classmethod
-    def load(cls, todo_path: str | Path, project: str) -> "SyncState":
+    def load(cls, todo_path: str | Path, project: str) -> SyncState:
         path = cls.path_for(todo_path)
         if not path.exists():
             return cls.empty(project)

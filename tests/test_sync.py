@@ -68,7 +68,7 @@ def test_task_parents_to_nearest_container_story_or_epic():
         f"      {BOX} Google provider\n"
         f"  {BOX} Password reset email\n"
     )
-    res = _sync(text, jira)
+    _sync(text, jira)
     by_summary = {i.summary: i for i in jira.issues.values()}
     auth = by_summary["Authentication"]
     flow = by_summary["Login flow"]
@@ -87,7 +87,7 @@ def test_task_parents_to_nearest_container_story_or_epic():
 
 def test_done_task_is_created_then_transitioned():
     jira = FakeJira()
-    res = _sync(f"P:\n  {DONE} finished thing\n", jira)
+    _sync(f"P:\n  {DONE} finished thing\n", jira)
     assert jira.issues["WEB-2"].status is Status.DONE
     assert any(c[0] == "set_status" for c in jira.calls)
 
@@ -132,7 +132,7 @@ def test_conflict_todo_wins_when_configured():
     jira = FakeJira()
     jira.seed("WEB-1", "jira version", issue_type="Task")
     state = SyncState("WEB", {"WEB-1": BaseEntry("base", "todo", "task")})
-    res = _sync(
+    _sync(
         f"P:\n  {BOX} todo version @jira(WEB-1)\n",
         jira,
         state,

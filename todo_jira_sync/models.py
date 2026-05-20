@@ -54,13 +54,13 @@ class Node:
 
     raw: str | None = None  # original text for OTHER passthrough lines
 
-    children: list["Node"] = field(default_factory=list)
-    parent: "Node | None" = field(default=None, repr=False)
+    children: list[Node] = field(default_factory=list)
+    parent: Node | None = field(default=None, repr=False)
 
     # Resolved during a tree pass; not parsed from the file.
     jira_parent_key: str | None = field(default=None, repr=False)
 
-    def add(self, child: "Node") -> None:
+    def add(self, child: Node) -> None:
         child.parent = self
         self.children.append(child)
 
@@ -83,7 +83,7 @@ class Node:
             p = p.parent
         return d
 
-    def nearest_ancestor(self, *kinds: NodeKind) -> "Node | None":
+    def nearest_ancestor(self, *kinds: NodeKind) -> Node | None:
         p = self.parent
         while p is not None:
             if p.kind in kinds:
