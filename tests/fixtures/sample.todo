@@ -1,0 +1,15 @@
+Authentication:
+  Login flow:
+    ☐ Build the login form
+    ✔ Wire up the session store @done(26-05-18 09:30)
+    ☐ Add OAuth providers
+      ☐ Google provider
+      ☐ GitHub provider
+  ☐ Password reset email
+
+Billing:
+  ☐ Stripe webhook handler
+  ✘ Legacy PayPal bridge @cancelled(26-05-10 14:00)
+
+# A comment line is preserved verbatim and ignored by the sync.
+☐ Standalone task with no epic

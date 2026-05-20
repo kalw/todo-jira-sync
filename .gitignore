@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+
+# Virtual envs
+.venv/
+venv/
+
+# Tooling caches
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# Local config & secrets
+.env
+
+# Sync state sidecars (generated next to the todo file)
+*.todojira.json
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store

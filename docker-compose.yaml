@@ -1,0 +1,21 @@
+# Convenience wrapper for running the CLI in a container against a local
+# working directory (your todo file + its .env live in ./work).
+#
+#   mkdir -p work && cp .env work/.env && cp todo.todo work/
+#   docker compose run --rm sync status
+#   docker compose run --rm sync sync
+#
+# This is a one-shot command runner, not a long-lived service.
+services:
+  sync:
+    build:
+      context: .
+      args:
+        VERSION: "0.0.0"
+    image: todo-jira-sync:local
+    env_file:
+      - ./work/.env
+    volumes:
+      - ./work:/work
+    # Override the default (--help) on the command line, e.g.:
+    #   docker compose run --rm sync sync --todo todo.todo --project WEB

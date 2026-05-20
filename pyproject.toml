@@ -1,0 +1,64 @@
+[build-system]
+requires = ["setuptools>=64", "setuptools-scm>=8"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "todo-jira-sync"
+description = "Bidirectionally sync a Jira project with a Todo+ (vscode-todo-plus) text file."
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.10"
+dynamic = ["version"]
+authors = [{ name = "Regis" }]
+keywords = ["jira", "todo", "todo-plus", "sync", "taskpaper", "vscode"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Topic :: Utilities",
+]
+dependencies = [
+    "typer>=0.12",
+    "requests>=2.31",
+    "pydantic-settings>=2.2",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8",
+    "ruff>=0.5",
+    "mypy>=1.10",
+    "types-requests",
+]
+
+[project.scripts]
+todo-jira-sync = "todo_jira_sync.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/kalw/todo-jira-sync"
+Issues = "https://github.com/kalw/todo-jira-sync/issues"
+
+[tool.setuptools]
+packages = ["todo_jira_sync"]
+
+[tool.setuptools_scm]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "W"]
+ignore = ["E501"]
+
+[tool.mypy]
+python_version = "3.10"
+warn_unused_ignores = true
+warn_redundant_casts = true
+ignore_missing_imports = true
+check_untyped_defs = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+addopts = "-q"
