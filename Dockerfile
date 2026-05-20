@@ -3,7 +3,7 @@
 # ---------------------------------------------------------------------------
 # Build stage: install the package (and its deps) into an isolated venv with uv.
 # ---------------------------------------------------------------------------
-FROM python:3.12-slim-bookworm AS build
+FROM python:3.14-slim-bookworm AS build
 
 # uv, copied from its official distroless image (pinned by the publish workflow).
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
@@ -28,7 +28,7 @@ RUN uv venv /opt/venv \
 # ---------------------------------------------------------------------------
 # Runtime stage: copy only the venv onto a slim base. No compilers, no uv.
 # ---------------------------------------------------------------------------
-FROM python:3.12-slim-bookworm AS runtime
+FROM python:3.14-slim-bookworm AS runtime
 
 # Run as a non-root user.
 RUN useradd --create-home --uid 1000 app
