@@ -24,6 +24,7 @@ _CATEGORY_TO_STATUS = {
     "done": Status.DONE,
 }
 
+
 # our NodeKind -> the configured Jira issue-type name
 def issue_type_name(kind: NodeKind, cfg: FormatConfig) -> str:
     return {

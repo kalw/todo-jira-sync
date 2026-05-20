@@ -11,12 +11,13 @@ All commands read connection details from the environment / ``.env`` via
 :class:`todo_jira_sync.settings.Settings`, but every value can be overridden on
 the command line. The todo file and its JSON state sidecar are only written
 when not running in dry-run mode.
+
+The options use the ``Annotated[...]`` Typer idiom (value defaults stay on the
+parameter) so the signatures type-check cleanly under mypy.
 """
 
-from __future__ import annotations
-
 from pathlib import Path
-from typing import Optional
+from typing import Annotated
 
 import typer
 
@@ -30,9 +31,20 @@ app = typer.Typer(
     help="Bidirectionally sync a Jira project with a Todo+ text file.",
 )
 
+# Reusable option annotations.
+TodoOpt = Annotated[str | None, typer.Option("--todo", "-t", help="Path to the Todo+ file.")]
+ProjectOpt = Annotated[str | None, typer.Option("--project", "-p", help="Jira project key.")]
+ConflictOpt = Annotated[str | None, typer.Option("--conflict", "-c", help="jira | todo | skip.")]
+DryRunOpt = Annotated[bool, typer.Option("--dry-run", help="Show actions without writing.")]
 
-def _run(direction: str, dry_run: bool, todo: Optional[str], project: Optional[str],
-         conflict: Optional[str]) -> SyncResult:
+
+def _run(
+    direction: str,
+    dry_run: bool,
+    todo: str | None,
+    project: str | None,
+    conflict: str | None,
+) -> SyncResult:
     settings = Settings()
     if conflict:
         settings.conflict = conflict
@@ -41,7 +53,9 @@ def _run(direction: str, dry_run: bool, todo: Optional[str], project: Optional[s
 
     settings.require("jira_url", "jira_api_token")
     if not project_key:
-        raise SystemExit("Missing required configuration: JIRA_PROJECT (pass --project or set it in .env)")
+        raise SystemExit(
+            "Missing required configuration: JIRA_PROJECT (pass --project or set it in .env)"
+        )
 
     path = Path(todo_path)
     if not path.exists():
@@ -75,7 +89,10 @@ def _run(direction: str, dry_run: bool, todo: Optional[str], project: Optional[s
     if not dry_run:
         path.write_text(result.todo_text, encoding="utf-8")
         result.state.save(todo_path)
-        typer.secho(f"\nWrote {todo_path} and {SyncState.path_for(todo_path).name}", fg=typer.colors.GREEN)
+        typer.secho(
+            f"\nWrote {todo_path} and {SyncState.path_for(todo_path).name}",
+            fg=typer.colors.GREEN,
+        )
     else:
         typer.secho("\nDry run - nothing was written.", fg=typer.colors.YELLOW)
     return result
@@ -97,15 +114,18 @@ def _report(result: SyncResult, dry_run: bool) -> None:
         typer.secho(str(action), fg=color)
     conflicts = result.conflicts
     if conflicts:
-        typer.secho(f"\n{len(conflicts)} conflict(s) - resolved per policy.", fg=typer.colors.RED)
+        typer.secho(
+            f"\n{len(conflicts)} conflict(s) - resolved per policy.",
+            fg=typer.colors.RED,
+        )
 
 
 @app.command(name="sync")
 def sync_cmd(
-    todo: Optional[str] = typer.Option(None, "--todo", "-t", help="Path to the Todo+ file."),
-    project: Optional[str] = typer.Option(None, "--project", "-p", help="Jira project key."),
-    conflict: Optional[str] = typer.Option(None, "--conflict", "-c", help="jira | todo | skip."),
-    dry_run: bool = typer.Option(False, "--dry-run", help="Show actions without writing."),
+    todo: TodoOpt = None,
+    project: ProjectOpt = None,
+    conflict: ConflictOpt = None,
+    dry_run: DryRunOpt = False,
 ) -> None:
     """Bidirectional sync (default)."""
     _run("both", dry_run, todo, project, conflict)
@@ -113,9 +133,9 @@ def sync_cmd(
 
 @app.command()
 def push(
-    todo: Optional[str] = typer.Option(None, "--todo", "-t"),
-    project: Optional[str] = typer.Option(None, "--project", "-p"),
-    dry_run: bool = typer.Option(False, "--dry-run"),
+    todo: TodoOpt = None,
+    project: ProjectOpt = None,
+    dry_run: DryRunOpt = False,
 ) -> None:
     """One-way: local todo file -> Jira."""
     _run("push", dry_run, todo, project, None)
@@ -123,9 +143,9 @@ def push(
 
 @app.command()
 def pull(
-    todo: Optional[str] = typer.Option(None, "--todo", "-t"),
-    project: Optional[str] = typer.Option(None, "--project", "-p"),
-    dry_run: bool = typer.Option(False, "--dry-run"),
+    todo: TodoOpt = None,
+    project: ProjectOpt = None,
+    dry_run: DryRunOpt = False,
 ) -> None:
     """One-way: Jira -> local todo file."""
     _run("pull", dry_run, todo, project, None)
@@ -133,8 +153,8 @@ def pull(
 
 @app.command()
 def status(
-    todo: Optional[str] = typer.Option(None, "--todo", "-t"),
-    project: Optional[str] = typer.Option(None, "--project", "-p"),
+    todo: TodoOpt = None,
+    project: ProjectOpt = None,
 ) -> None:
     """Dry run: show what a bidirectional sync would do."""
     _run("both", True, todo, project, None)

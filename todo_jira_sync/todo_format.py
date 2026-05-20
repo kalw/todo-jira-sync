@@ -89,8 +89,9 @@ def _extract_tags(text: str) -> tuple[str, dict[str, str | None], list[str]]:
 
 
 def _apply_managed(node: Node, managed: dict[str, str | None]) -> None:
-    if "jira" in managed and managed["jira"]:
-        node.jira_key = managed["jira"].strip()
+    jira_value = managed.get("jira")
+    if jira_value:
+        node.jira_key = jira_value.strip()
     # Status from symbol is authoritative; tags only *refine* TODO -> IN_PROGRESS
     # and carry the timekeeping values for round-tripping.
     if "started" in managed:

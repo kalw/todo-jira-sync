@@ -144,7 +144,8 @@ docker compose run --rm sync sync --todo todo.todo --project WEB
 ```
 
 Prebuilt multi-arch images (amd64 + arm64) are published to GitHub Container
-Registry by CI on pushes to `main` and on version tags.
+Registry by CI on version tags (and on demand via the workflow's manual
+trigger).
 
 ## Releasing
 

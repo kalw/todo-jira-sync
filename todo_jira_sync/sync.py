@@ -94,26 +94,28 @@ def sync(
             itype = issue_type_name(node.kind, cfg)
             if dry_run:
                 dry_counter[0] += 1
-                node.jira_key = f"NEW-{dry_counter[0]}"
-                actions.append(
-                    Action("CREATE", node.jira_key, f"{itype}: {node.title!r}")
-                )
+                new_key = f"NEW-{dry_counter[0]}"
+                actions.append(Action("CREATE", new_key, f"{itype}: {node.title!r}"))
             else:
-                key = client.create_issue(
+                new_key = client.create_issue(
                     project=project,
                     issue_type=itype,
                     summary=node.title,
                     parent_key=parent_key,
                 )
-                node.jira_key = key
-                actions.append(Action("CREATE", key, f"{itype}: {node.title!r}"))
+                actions.append(Action("CREATE", new_key, f"{itype}: {node.title!r}"))
                 if node.status is not Status.TODO:
-                    client.set_status(key, node.status)
-                    actions.append(Action("SET_STATUS", key, node.status.value))
-            new_entries[node.jira_key] = _entry_from_node(node)
+                    client.set_status(new_key, node.status)
+                    actions.append(Action("SET_STATUS", new_key, node.status.value))
+            node.jira_key = new_key
+            new_entries[new_key] = _entry_from_node(node)
         resolve_jira_parents(root, cfg)  # refresh links now that keys exist
 
-    todo_by_key = {n.jira_key: n for n in root.issues() if n.jira_key}
+    todo_by_key: dict[str, Node] = {}
+    for n in root.issues():
+        node_key = n.jira_key
+        if node_key:
+            todo_by_key[node_key] = n
 
     # ------------------------------------------------------------------ #
     # Phase B: reconcile issues present on both sides

@@ -7,16 +7,17 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
+from tests.fake_jira import FakeJira
 from todo_jira_sync.config import CONFLICT_SKIP, CONFLICT_TODO, FormatConfig
 from todo_jira_sync.models import Status
 from todo_jira_sync.state import BaseEntry, SyncState
 from todo_jira_sync.sync import sync
-from todo_jira_sync.todo_format import parse
-
-from tests.fake_jira import FakeJira
 
 BOX, DONE = "\u2610", "\u2714"
-CLOCK = lambda: datetime(2026, 5, 20, 9, 0, tzinfo=timezone.utc)
+
+
+def CLOCK() -> datetime:
+    return datetime(2026, 5, 20, 9, 0, tzinfo=timezone.utc)
 
 
 def _sync(text, jira, state=None, **kw):
@@ -160,7 +161,7 @@ def test_pull_new_jira_issue_into_todo_under_parent():
     jira = FakeJira()
     jira.seed("WEB-1", "Epic", issue_type="Epic")
     jira.seed("WEB-2", "child story", issue_type="Story", parent_key="WEB-1")
-    res = _sync(f"Epic @jira(WEB-1):\n", jira)
+    res = _sync("Epic @jira(WEB-1):\n", jira)
     assert "child story" in res.todo_text
     assert any(a.op == "PULL_NEW" and a.key == "WEB-2" for a in res.actions)
 
