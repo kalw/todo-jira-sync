@@ -46,44 +46,47 @@ jobs:
       REPO: ${{ github.repository }}
     steps:
       - name: Add Docker & PyPI links to release notes
+        # The Python script is built from a list of strings to avoid placing
+        # raw Markdown (---, ##, ```) at column-0 inside the YAML literal block,
+        # which would prematurely terminate the block scalar.
         run: |
-          python3 << 'PYEOF'
+          python3 - << 'PYEOF'
           import os, subprocess
 
-          tag   = os.environ["TAG"]
-          repo  = os.environ["REPO"]
+          tag     = os.environ["TAG"]
+          repo    = os.environ["REPO"]
           version = tag.lstrip("v")
           package = "todo-jira-sync"
           image   = f"ghcr.io/{repo}"
 
-          addendum = f"""
-
----
-
-## \U0001f4e6 Artifacts
-
-### \U0001f40d PyPI
-
-```bash
-pip install {package}=={version}
-# or with uv
-uv add {package}=={version}
-```
-
-\U0001f4e6 <https://pypi.org/project/{package}/{version}/>
-
-### \U0001f433 Docker (GitHub Container Registry)
-
-```bash
-docker run --rm \\
-  --env-file .env \\
-  -v "$(pwd):/work" \\
-  {image}:{version} \\
-  sync --help
-```
-
-\U0001f3f7️ `{image}:{version}`
-"""
+          addendum = "\n".join([
+              "",
+              "---",
+              "",
+              "## \U0001f4e6 Artifacts",
+              "",
+              "### \U0001f40d PyPI",
+              "",
+              "```bash",
+              f"pip install {package}=={version}",
+              "# or with uv",
+              f"uv add {package}=={version}",
+              "```",
+              "",
+              f"\U0001f4e6 <https://pypi.org/project/{package}/{version}/>",
+              "",
+              "### \U0001f433 Docker (GitHub Container Registry)",
+              "",
+              "```bash",
+              "docker run --rm \\",
+              "  --env-file .env \\",
+              '  -v "$(pwd):/work" \\',
+              f"  {image}:{version} \\",
+              "  sync --help",
+              "```",
+              "",
+              f"\U0001f3f7️ `{image}:{version}`",
+          ])
 
           result = subprocess.run(
               ["gh", "release", "view", tag, "--repo", repo,

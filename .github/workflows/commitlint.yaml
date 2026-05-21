@@ -19,5 +19,3 @@ jobs:
         with:
           configFile: .commitlintrc.yaml
           helpURL: https://www.conventionalcommits.org/
-          # Validate every commit in the PR, not just the latest.
-          firstParent: false

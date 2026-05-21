@@ -152,3 +152,30 @@ Merging that Release PR:
 4. Triggers `publish-pypi.yaml` → sdist + wheel published to PyPI via OIDC
 
 **Do not** create version tags or GitHub Releases by hand.
+
+### One-time publish setup (human steps, done once per repo)
+
+These steps cannot be automated — they require UI access to GitHub and PyPI.
+
+**GitHub — create the `pypi` environment**
+
+1. Repository → Settings → Environments → **New environment**
+2. Name it exactly **`pypi`** (matches `environment: pypi` in `publish-pypi.yaml`)
+3. No approval gates or restrictions required
+
+**PyPI — register the Trusted Publisher**
+
+Go to <https://pypi.org/manage/account/publishing/> and click
+**"Add a new pending publisher"** (use "pending" if `todo-jira-sync` doesn't
+exist on PyPI yet):
+
+| Field | Value |
+|-------|-------|
+| PyPI project name | `todo-jira-sync` |
+| Owner | `kalw` |
+| Repository name | `todo-jira-sync` |
+| Workflow filename | `publish-pypi.yaml` |
+| Environment | `pypi` |
+
+Once both are configured, pushing a `v*` tag (done automatically by the
+Release PR merge) will publish to PyPI with no API token required.
