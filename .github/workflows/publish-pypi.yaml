@@ -1,10 +1,18 @@
 name: Publish to PyPI
 
-# Triggered when release-please creates a vX.Y.Z tag.
+# Triggered automatically when release-please creates a vX.Y.Z tag.
+# Can also be triggered manually to re-publish a specific tag (e.g. after
+# configuring PyPI Trusted Publishing for the first time).
 on:
   push:
     tags:
       - "v*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag to publish (e.g. v1.0.0). Defaults to the workflow ref."
+        required: false
+        type: string
 
 # ---------------------------------------------------------------------------
 # One-time setup required before this workflow can publish:
@@ -28,6 +36,9 @@ jobs:
     steps:
       - uses: actions/checkout@v6
         with:
+          # Check out the manually-supplied tag when dispatched by hand,
+          # otherwise let the default ref (the pushed tag) apply.
+          ref: ${{ inputs.tag || github.ref }}
           fetch-depth: 0  # setuptools-scm needs the full tag history
 
       - name: Install uv
@@ -45,10 +56,12 @@ jobs:
   publish:
     needs: build
     runs-on: ubuntu-latest
-    environment: pypi          # must match the environment name on PyPI Trusted Publisher
+    environment:
+      name: pypi       # must match the environment name in the PyPI Trusted Publisher
+      url: https://pypi.org/project/todo-jira-sync/
     permissions:
-      id-token: write          # OIDC token for PyPI Trusted Publishing
-      attestations: write      # SLSA build provenance
+      id-token: write   # OIDC token for PyPI Trusted Publishing
+      attestations: write
       contents: read
     steps:
       - uses: actions/download-artifact@v4
