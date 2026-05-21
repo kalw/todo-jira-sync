@@ -1,12 +1,16 @@
-name: Publish container
+name: Publish container (manual)
 
-# Triggered when release-please publishes a GitHub Release (not on the raw
-# tag push — tags created by GITHUB_TOKEN do not fire push-tag triggers in
-# other workflows, but the release: published event does).
+# Manual re-trigger only.
+# Automatic publishing on release is handled by the publish-docker job in
+# release.yaml, which runs inside the same workflow as release-please and
+# therefore is not subject to the GITHUB_TOKEN trigger restriction.
 on:
-  release:
-    types: [published]
   workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag to publish (e.g. v1.0.0)"
+        required: true
+        type: string
 
 env:
   REGISTRY: ghcr.io
@@ -20,22 +24,20 @@ jobs:
       url: https://ghcr.io/${{ github.repository }}
     permissions:
       contents: read
-      packages: write   # push to GitHub Container Registry
+      packages: write
       attestations: write
       id-token: write
     steps:
       - uses: actions/checkout@v6
         with:
-          fetch-depth: 0  # so setuptools-scm can resolve the version
+          ref: ${{ inputs.tag }}
+          fetch-depth: 0
 
-      - name: Resolve version
+      - name: Strip v prefix from tag
         id: version
         run: |
-          if command -v git >/dev/null && git describe --tags >/dev/null 2>&1; then
-            echo "value=$(git describe --tags --always | sed 's/^v//')" >> "$GITHUB_OUTPUT"
-          else
-            echo "value=0.0.0" >> "$GITHUB_OUTPUT"
-          fi
+          tag="${{ inputs.tag }}"
+          echo "value=${tag#v}" >> "$GITHUB_OUTPUT"
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v4
@@ -56,10 +58,8 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
-            type=ref,event=branch
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=sha
+            type=semver,pattern={{version}},value=${{ inputs.tag }}
+            type=semver,pattern={{major}}.{{minor}},value=${{ inputs.tag }}
 
       - name: Build and push (amd64 + arm64)
         id: push
@@ -68,8 +68,7 @@ jobs:
           context: .
           platforms: linux/amd64,linux/arm64
           push: true
-          build-args: |
-            VERSION=${{ steps.version.outputs.value }}
+          build-args: VERSION=${{ steps.version.outputs.value }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
