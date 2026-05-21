@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.0.2](https://github.com/kalw/todo-jira-sync/compare/v1.0.1...v1.0.2) (2026-05-21)
+
+
+### Bug Fixes
+
+* **ci:** add workflow_dispatch + deployment envs to publish workflows ([de167a0](https://github.com/kalw/todo-jira-sync/commit/de167a09c407aad4d2f913ecf4f4218de1a9d1f8))
+* **ci:** rename docker deployment environment from ghcr to docker ([cccc43d](https://github.com/kalw/todo-jira-sync/commit/cccc43dc4c465c406f2cd25578e876b30fe41b87))
+
 ## [1.0.1](https://github.com/kalw/todo-jira-sync/compare/v1.0.0...v1.0.1) (2026-05-21)
 
 
