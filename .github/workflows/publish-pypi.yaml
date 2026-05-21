@@ -1,9 +1,26 @@
 name: Publish to PyPI
 
+# Triggered when release-please creates a vX.Y.Z tag.
 on:
   push:
     tags:
       - "v*"
+
+# ---------------------------------------------------------------------------
+# One-time setup required before this workflow can publish:
+#
+# 1. GitHub: Settings → Environments → New environment → name it "pypi".
+#    (No approval gates needed; the environment just scopes the OIDC token.)
+#
+# 2. PyPI Trusted Publisher (no API token required):
+#    https://pypi.org/manage/account/publishing/
+#    Fill in:
+#      • PyPI project name : todo-jira-sync
+#      • Owner             : kalw
+#      • Repository        : todo-jira-sync
+#      • Workflow filename  : publish-pypi.yaml
+#      • Environment       : pypi
+# ---------------------------------------------------------------------------
 
 jobs:
   build:
@@ -11,7 +28,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
         with:
-          fetch-depth: 0  # setuptools-scm needs the tag history
+          fetch-depth: 0  # setuptools-scm needs the full tag history
 
       - name: Install uv
         uses: astral-sh/setup-uv@v7
@@ -23,18 +40,28 @@ jobs:
         with:
           name: dist
           path: dist/
+          if-no-files-found: error
 
   publish:
     needs: build
     runs-on: ubuntu-latest
-    environment: pypi
+    environment: pypi          # must match the environment name on PyPI Trusted Publisher
     permissions:
-      id-token: write  # OIDC for PyPI Trusted Publishing (no API token needed)
+      id-token: write          # OIDC token for PyPI Trusted Publishing
+      attestations: write      # SLSA build provenance
+      contents: read
     steps:
       - uses: actions/download-artifact@v4
         with:
           name: dist
           path: dist/
 
-      - name: Publish
+      - name: Generate SLSA attestations
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: dist/*
+
+      - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          attestations: true
