@@ -132,8 +132,27 @@ git push -u origin HEAD
 gh pr create --fill
 ```
 
-**Do not** `git push origin main`. If working on an existing PR branch, push to
-that branch and let CI run before requesting review.
+**Do not** `git push origin main`.
+
+### Before every push — check the PR is still open
+
+This is the single most common mistake: pushing to a branch whose PR was already
+merged while you were working. **Always run this before `git push`:**
+
+```bash
+git fetch origin
+gh pr view --head "$(git branch --show-current)" --repo kalw/todo-jira-sync \
+  --json state,mergedAt --jq '"state: \(.state)  mergedAt: \(.mergedAt)"'
+```
+
+| Output | What to do |
+|--------|-----------|
+| `state: OPEN` | Safe to push — continue normally. |
+| `state: MERGED` | **Stop.** Create a new branch from `origin/main`, cherry-pick your commit(s), open a new PR. |
+| `state: CLOSED` | Same as MERGED — branch was closed without merging; start fresh. |
+
+If `gh pr view` returns an error (no PR found), the branch was never opened as a
+PR — push normally and open one with `gh pr create --fill`.
 
 ### Release flow (fully automated)
 
