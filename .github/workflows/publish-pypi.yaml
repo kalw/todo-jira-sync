@@ -1,16 +1,16 @@
 name: Publish to PyPI
 
-# Triggered automatically when release-please creates a vX.Y.Z tag.
-# Can also be triggered manually to re-publish a specific tag (e.g. after
-# configuring PyPI Trusted Publishing for the first time).
+# Triggered when release-please publishes a GitHub Release (not on the raw
+# tag push — tags created by GITHUB_TOKEN do not fire push-tag triggers in
+# other workflows, but the release: published event does).
+# Can also be triggered manually to re-publish a specific tag.
 on:
-  push:
-    tags:
-      - "v*"
+  release:
+    types: [published]
   workflow_dispatch:
     inputs:
       tag:
-        description: "Tag to publish (e.g. v1.0.0). Defaults to the workflow ref."
+        description: "Tag to publish (e.g. v1.0.0). Defaults to the latest release ref."
         required: false
         type: string
 
