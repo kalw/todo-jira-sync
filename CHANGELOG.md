@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.4](https://github.com/kalw/todo-jira-sync/compare/v1.0.3...v1.0.4) (2026-05-21)
+
+
+### Bug Fixes
+
+* **ci:** consolidate publish jobs into release.yaml to bypass GITHUB_TOKEN trigger restriction ([ee8239d](https://github.com/kalw/todo-jira-sync/commit/ee8239d85375cd3b6560faa62948092f63f48a30))
+
 ## [1.0.3](https://github.com/kalw/todo-jira-sync/compare/v1.0.2...v1.0.3) (2026-05-21)
 
 
