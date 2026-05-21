@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.3](https://github.com/kalw/todo-jira-sync/compare/v1.0.2...v1.0.3) (2026-05-21)
+
+
+### Bug Fixes
+
+* **ci:** trigger publish workflows on release: published not push: tags ([a5feeab](https://github.com/kalw/todo-jira-sync/commit/a5feeab39769eccd31005e0d16143d99d5e69c93))
+
 ## [1.0.2](https://github.com/kalw/todo-jira-sync/compare/v1.0.1...v1.0.2) (2026-05-21)
 
 
