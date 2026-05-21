@@ -14,7 +14,7 @@ jobs:
   docker:
     runs-on: ubuntu-latest
     environment:
-      name: ghcr
+      name: docker
       url: https://ghcr.io/${{ github.repository }}
     permissions:
       contents: read
