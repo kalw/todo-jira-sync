@@ -166,14 +166,20 @@ opens or updates a **Release PR** titled `chore(main): release X.Y.Z` that:
 Merging that Release PR:
 
 1. Creates the `vX.Y.Z` git tag and GitHub Release
-2. Appends Docker/PyPI artifact links to the release body (`release.yaml` annotate job)
-3. Fires `on: release: published` → triggers `publish-docker.yaml` and `publish-pypi.yaml`
+2. Appends Docker/PyPI artifact links to the release body (`annotate` job)
+3. Builds and publishes to PyPI (`publish-pypi` job)
+4. Builds and pushes the multi-arch Docker image to GHCR (`publish-docker` job)
 
-> **Why `release: published` and not `push: tags`?**
-> Tags created by a workflow via `GITHUB_TOKEN` do **not** re-trigger other
-> workflows (GitHub blocks this to prevent loops). The `release: published`
-> event is fired by the Releases API and bypasses that restriction.
-> Never change the publish workflow triggers back to `push: tags: v*`.
+All four jobs run inside `release.yaml` itself. The separate `publish-pypi.yaml`
+and `publish-docker.yaml` files exist **only** for `workflow_dispatch` (manual
+re-runs of a specific tag) — they have no automatic triggers.
+
+> **Why not `push: tags` or `release: published` in the publish files?**
+> GitHub blocks workflows triggered by `GITHUB_TOKEN` from re-triggering other
+> workflows — this covers both `push: tags: v*` and `release: published`.
+> Release-please uses `GITHUB_TOKEN`, so both triggers are silently dead.
+> The only reliable fix is to run the publish jobs in the **same workflow** as
+> release-please. Never add push/release triggers to the publish files.
 
 **Do not** create version tags or GitHub Releases by hand.
 

@@ -1,73 +1,38 @@
-name: Publish to PyPI
+name: Publish to PyPI (manual)
 
-# Triggered when release-please publishes a GitHub Release (not on the raw
-# tag push — tags created by GITHUB_TOKEN do not fire push-tag triggers in
-# other workflows, but the release: published event does).
-# Can also be triggered manually to re-publish a specific tag.
+# Manual re-trigger only.
+# Automatic publishing on release is handled by the publish-pypi job in
+# release.yaml, which runs inside the same workflow as release-please and
+# therefore is not subject to the GITHUB_TOKEN trigger restriction.
 on:
-  release:
-    types: [published]
   workflow_dispatch:
     inputs:
       tag:
-        description: "Tag to publish (e.g. v1.0.0). Defaults to the latest release ref."
-        required: false
+        description: "Tag to publish (e.g. v1.0.0)"
+        required: true
         type: string
 
-# ---------------------------------------------------------------------------
-# One-time setup required before this workflow can publish:
-#
-# 1. GitHub: Settings → Environments → New environment → name it "pypi".
-#    (No approval gates needed; the environment just scopes the OIDC token.)
-#
-# 2. PyPI Trusted Publisher (no API token required):
-#    https://pypi.org/manage/account/publishing/
-#    Fill in:
-#      • PyPI project name : todo-jira-sync
-#      • Owner             : kalw
-#      • Repository        : todo-jira-sync
-#      • Workflow filename  : publish-pypi.yaml
-#      • Environment       : pypi
-# ---------------------------------------------------------------------------
-
 jobs:
-  build:
+  build-and-publish:
     runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/project/todo-jira-sync/
+    permissions:
+      id-token: write
+      attestations: write
+      contents: read
     steps:
       - uses: actions/checkout@v6
         with:
-          # Check out the manually-supplied tag when dispatched by hand,
-          # otherwise let the default ref (the pushed tag) apply.
-          ref: ${{ inputs.tag || github.ref }}
-          fetch-depth: 0  # setuptools-scm needs the full tag history
+          ref: ${{ inputs.tag }}
+          fetch-depth: 0
 
       - name: Install uv
         uses: astral-sh/setup-uv@v7
 
       - name: Build sdist and wheel
         run: uv build
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: dist
-          path: dist/
-          if-no-files-found: error
-
-  publish:
-    needs: build
-    runs-on: ubuntu-latest
-    environment:
-      name: pypi       # must match the environment name in the PyPI Trusted Publisher
-      url: https://pypi.org/project/todo-jira-sync/
-    permissions:
-      id-token: write   # OIDC token for PyPI Trusted Publishing
-      attestations: write
-      contents: read
-    steps:
-      - uses: actions/download-artifact@v4
-        with:
-          name: dist
-          path: dist/
 
       - name: Generate SLSA attestations
         uses: actions/attest-build-provenance@v2
