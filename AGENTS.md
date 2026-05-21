@@ -165,10 +165,15 @@ opens or updates a **Release PR** titled `chore(main): release X.Y.Z` that:
 
 Merging that Release PR:
 
-1. Creates the `vX.Y.Z` git tag
-2. Creates the GitHub Release with CHANGELOG and Docker/PyPI artifact links
-3. Triggers `publish-docker.yaml` → multi-arch image pushed to GHCR
-4. Triggers `publish-pypi.yaml` → sdist + wheel published to PyPI via OIDC
+1. Creates the `vX.Y.Z` git tag and GitHub Release
+2. Appends Docker/PyPI artifact links to the release body (`release.yaml` annotate job)
+3. Fires `on: release: published` → triggers `publish-docker.yaml` and `publish-pypi.yaml`
+
+> **Why `release: published` and not `push: tags`?**
+> Tags created by a workflow via `GITHUB_TOKEN` do **not** re-trigger other
+> workflows (GitHub blocks this to prevent loops). The `release: published`
+> event is fired by the Releases API and bypasses that restriction.
+> Never change the publish workflow triggers back to `push: tags: v*`.
 
 **Do not** create version tags or GitHub Releases by hand.
 
