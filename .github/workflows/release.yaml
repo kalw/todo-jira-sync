@@ -7,13 +7,15 @@ name: Release
 #   3. Publish to PyPI  (via reusable publish-pypi.yaml — keeps job_workflow_ref correct)
 #   4. Push to GHCR     (inline — no OIDC issuer constraint from registries)
 #
-# Auto-release: when release-please opens or updates the Release PR, a step
-# immediately enables auto-merge on it. Once CI passes the PR merges itself,
-# triggering this workflow again, which then runs jobs 1-4 above.
-# Requires "Allow auto-merge" to be enabled in Settings → General.
+# Auto-release: when release-please opens the Release PR, a step immediately
+# merges it (release PRs only touch version.txt + CHANGELOG) and then
+# explicitly dispatches this workflow on main via workflow_dispatch.
+# This sidesteps GitHub's GITHUB_TOKEN anti-loop rule, which would otherwise
+# prevent the push event from firing when the merge is done by GITHUB_TOKEN.
 on:
   push:
     branches: [main]
+  workflow_dispatch:  # Allow manual re-run and self-dispatch after Release PR merge
 
 permissions:
   contents: write
@@ -36,10 +38,18 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           release-type: simple
 
-      # Enable auto-merge on the Release PR so it merges itself once CI is
-      # green — no human approval needed.
-      # Prerequisite: Settings → General → "Allow auto-merge" must be on.
-      - name: Auto-merge Release PR
+      # Merge the Release PR and re-dispatch this workflow on main.
+      #
+      # Why re-dispatch?  GitHub blocks workflows from being re-triggered when
+      # a merge is performed by GITHUB_TOKEN (anti-loop protection).  So the
+      # push that lands `chore(main): release X.Y.Z` on main would normally
+      # be invisible to push-event listeners.  We work around this by
+      # explicitly dispatching the workflow after the merge completes.
+      #
+      # --squash without --auto merges immediately; release PRs only touch
+      # version.txt and CHANGELOG.md so no CI gate is needed.  We poll briefly
+      # to confirm GitHub has recorded the merge before dispatching.
+      - name: Merge Release PR and re-dispatch release workflow
         if: steps.rp.outputs.pr != ''
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -48,8 +58,22 @@ jobs:
           pr_number=$(echo "$PR_JSON" | jq -r '.number')
           gh pr merge "$pr_number" \
             --repo "${{ github.repository }}" \
-            --squash \
-            --auto
+            --squash
+
+          # Wait until the PR is confirmed merged (usually instant, cap at 5 min)
+          for i in $(seq 1 60); do
+            state=$(gh pr view "$pr_number" \
+              --repo "${{ github.repository }}" \
+              --json state -q '.state')
+            [ "$state" = "MERGED" ] && break
+            sleep 5
+          done
+
+          # Dispatch release.yaml on main so release-please can detect the
+          # release commit and create the tag + GitHub Release.
+          gh workflow run release.yaml \
+            --repo "${{ github.repository }}" \
+            --ref main
 
   # --------------------------------------------------------------------------
   # 2. annotate: append Docker / PyPI artifact links to the release body.
