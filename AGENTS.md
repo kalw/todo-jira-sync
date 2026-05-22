@@ -163,11 +163,13 @@ opens or updates a **Release PR** titled `chore(main): release X.Y.Z` that:
 - Bumps `version.txt` to the next semver
 - Regenerates `CHANGELOG.md` from the accumulated conventional commits
 
-The Release PR is **auto-merged** once CI passes — no human approval needed.
-Prerequisite: **Settings → General → "Allow auto-merge" must be enabled** in
-the repository (one-time UI toggle).
+The Release PR is **merged immediately** by the workflow (release PRs only
+touch `version.txt` and `CHANGELOG.md`, so no CI gate is needed). After
+merging, the workflow dispatches itself again via `workflow_dispatch` — this
+sidesteps GitHub's anti-loop rule that blocks push events when a merge is
+performed by `GITHUB_TOKEN`.
 
-After the Release PR merges, the workflow runs again and:
+The dispatched run of the workflow then:
 
 1. Creates the `vX.Y.Z` git tag and GitHub Release
 2. Appends Docker/PyPI artifact links to the release body (`annotate` job)
@@ -186,11 +188,14 @@ of a specific tag) — they have no automatic triggers.
 > `job_workflow_ref` would be `release.yaml` and PyPI would reject the token.
 > Never inline the PyPI publish steps into release.yaml.
 >
-> **Why not `push: tags` or `release: published` in the publish files?**
-> GitHub blocks workflows triggered by `GITHUB_TOKEN` from re-triggering other
-> workflows — covers both `push: tags: v*` and `release: published`. Since
-> release-please uses `GITHUB_TOKEN`, both triggers are silently dead.
-> Never add push/release triggers to the publish files.
+> **Why `workflow_dispatch` instead of auto-merge + push event?**
+> GitHub blocks workflows from being re-triggered when a merge is performed by
+> `GITHUB_TOKEN` (anti-loop protection). This applies to both the direct merge
+> done by `gh pr merge` and the auto-merge mechanism. Using `workflow_dispatch`
+> to self-call the workflow on main is the only reliable way to continue the
+> pipeline after a `GITHUB_TOKEN`-owned merge.
+> Never rely on `push: tags: v*` or `release: published` for automatic
+> publishing — both are silently dead when release-please creates the tag/release.
 
 **Do not** create version tags or GitHub Releases by hand.
 
