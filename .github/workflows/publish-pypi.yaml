@@ -1,14 +1,26 @@
-name: Publish to PyPI (manual)
+name: Publish to PyPI
 
-# Manual re-trigger only.
-# Automatic publishing on release is handled by the publish-pypi job in
-# release.yaml, which runs inside the same workflow as release-please and
-# therefore is not subject to the GITHUB_TOKEN trigger restriction.
+# Called by release.yaml via workflow_call for automatic releases.
+# Also available as workflow_dispatch for manual re-publishes.
+#
+# IMPORTANT — why this must stay as a separate reusable workflow:
+# PyPI Trusted Publishing validates the OIDC token's `job_workflow_ref` claim.
+# When a job uses `uses: ./.github/workflows/publish-pypi.yaml`, GitHub sets
+# `job_workflow_ref` to this file, matching the pending publisher config:
+#   Workflow: publish-pypi.yaml  /  Environment: pypi
+# If the publish steps were inlined into release.yaml, `job_workflow_ref`
+# would point to release.yaml and PyPI would reject the token.
 on:
+  workflow_call:
+    inputs:
+      tag:
+        description: "Tag to publish (e.g. v1.0.3)"
+        required: true
+        type: string
   workflow_dispatch:
     inputs:
       tag:
-        description: "Tag to publish (e.g. v1.0.0)"
+        description: "Tag to publish (e.g. v1.0.3)"
         required: true
         type: string
 
@@ -19,14 +31,14 @@ jobs:
       name: pypi
       url: https://pypi.org/project/todo-jira-sync/
     permissions:
-      id-token: write
+      id-token: write    # OIDC token — job_workflow_ref will be publish-pypi.yaml
       attestations: write
       contents: read
     steps:
       - uses: actions/checkout@v6
         with:
           ref: ${{ inputs.tag }}
-          fetch-depth: 0
+          fetch-depth: 0  # setuptools-scm needs full tag history
 
       - name: Install uv
         uses: astral-sh/setup-uv@v7
