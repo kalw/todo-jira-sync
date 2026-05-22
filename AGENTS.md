@@ -163,23 +163,34 @@ opens or updates a **Release PR** titled `chore(main): release X.Y.Z` that:
 - Bumps `version.txt` to the next semver
 - Regenerates `CHANGELOG.md` from the accumulated conventional commits
 
-Merging that Release PR:
+The Release PR is **auto-merged** once CI passes — no human approval needed.
+Prerequisite: **Settings → General → "Allow auto-merge" must be enabled** in
+the repository (one-time UI toggle).
+
+After the Release PR merges, the workflow runs again and:
 
 1. Creates the `vX.Y.Z` git tag and GitHub Release
 2. Appends Docker/PyPI artifact links to the release body (`annotate` job)
-3. Builds and publishes to PyPI (`publish-pypi` job)
+3. Publishes to PyPI via the `publish-pypi` reusable workflow (`publish-pypi` job)
 4. Builds and pushes the multi-arch Docker image to GHCR (`publish-docker` job)
 
-All four jobs run inside `release.yaml` itself. The separate `publish-pypi.yaml`
-and `publish-docker.yaml` files exist **only** for `workflow_dispatch` (manual
-re-runs of a specific tag) — they have no automatic triggers.
+All jobs run inside `release.yaml`. The separate `publish-pypi.yaml` and
+`publish-docker.yaml` exist **only** for `workflow_dispatch` (manual re-publishes
+of a specific tag) — they have no automatic triggers.
 
+> **Why `publish-pypi.yaml` must stay a reusable workflow, not inlined:**
+> PyPI Trusted Publishing validates the OIDC token's `job_workflow_ref` claim.
+> When `release.yaml` calls `uses: ./.github/workflows/publish-pypi.yaml`,
+> GitHub sets `job_workflow_ref` to `publish-pypi.yaml` — matching the pending
+> publisher config (`Workflow: publish-pypi.yaml`). If the steps were inlined,
+> `job_workflow_ref` would be `release.yaml` and PyPI would reject the token.
+> Never inline the PyPI publish steps into release.yaml.
+>
 > **Why not `push: tags` or `release: published` in the publish files?**
 > GitHub blocks workflows triggered by `GITHUB_TOKEN` from re-triggering other
-> workflows — this covers both `push: tags: v*` and `release: published`.
-> Release-please uses `GITHUB_TOKEN`, so both triggers are silently dead.
-> The only reliable fix is to run the publish jobs in the **same workflow** as
-> release-please. Never add push/release triggers to the publish files.
+> workflows — covers both `push: tags: v*` and `release: published`. Since
+> release-please uses `GITHUB_TOKEN`, both triggers are silently dead.
+> Never add push/release triggers to the publish files.
 
 **Do not** create version tags or GitHub Releases by hand.
 

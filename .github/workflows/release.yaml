@@ -4,19 +4,17 @@ name: Release
 # release-please maintains a "Release PR"; merging it causes this workflow to:
 #   1. Create the vX.Y.Z tag + GitHub Release
 #   2. Append artifact links to the release body
-#   3. Publish to PyPI  (same workflow — avoids GITHUB_TOKEN trigger restriction)
-#   4. Push to GHCR     (same workflow — avoids GITHUB_TOKEN trigger restriction)
+#   3. Publish to PyPI  (via reusable publish-pypi.yaml — keeps job_workflow_ref correct)
+#   4. Push to GHCR     (inline — no OIDC issuer constraint from registries)
 #
-# NOTE: publish-pypi.yaml and publish-docker.yaml exist only as manual
-# re-trigger targets (workflow_dispatch). Do NOT add push/release triggers
-# to them — tags created by GITHUB_TOKEN do not fire push/release events in
-# other workflows.
+# Auto-release: when release-please opens or updates the Release PR, a step
+# immediately enables auto-merge on it. Once CI passes the PR merges itself,
+# triggering this workflow again, which then runs jobs 1-4 above.
+# Requires "Allow auto-merge" to be enabled in Settings → General.
 on:
   push:
     branches: [main]
 
-# Workflow-level defaults (release-please needs contents+PR write).
-# Publish jobs override these with their own narrower permission sets.
 permissions:
   contents: write
   pull-requests: write
@@ -30,12 +28,28 @@ jobs:
     outputs:
       release_created: ${{ steps.rp.outputs.release_created }}
       tag_name:        ${{ steps.rp.outputs.tag_name }}
+      pr:              ${{ steps.rp.outputs.pr }}
     steps:
       - uses: googleapis/release-please-action@v4
         id: rp
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           release-type: simple
+
+      # Enable auto-merge on the Release PR so it merges itself once CI is
+      # green — no human approval needed.
+      # Prerequisite: Settings → General → "Allow auto-merge" must be on.
+      - name: Auto-merge Release PR
+        if: steps.rp.outputs.pr != ''
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_JSON: ${{ steps.rp.outputs.pr }}
+        run: |
+          pr_number=$(echo "$PR_JSON" | jq -r '.number')
+          gh pr merge "$pr_number" \
+            --repo "${{ github.repository }}" \
+            --squash \
+            --auto
 
   # --------------------------------------------------------------------------
   # 2. annotate: append Docker / PyPI artifact links to the release body.
@@ -53,8 +67,6 @@ jobs:
       REPO: ${{ github.repository }}
     steps:
       - name: Add Docker & PyPI links to release notes
-        # Built as a list of strings — raw Markdown tokens at column-0 would
-        # terminate the YAML literal block prematurely.
         run: |
           python3 - << 'PYEOF'
           import os, subprocess
@@ -112,41 +124,21 @@ jobs:
           PYEOF
 
   # --------------------------------------------------------------------------
-  # 3. publish-pypi: build sdist + wheel and upload to PyPI via OIDC.
+  # 3. publish-pypi: delegate to the reusable workflow.
+  #    Using `uses:` sets job_workflow_ref → publish-pypi.yaml in the OIDC
+  #    token, which is what the PyPI Trusted Publisher config expects.
   # --------------------------------------------------------------------------
   publish-pypi:
     name: Publish to PyPI
     needs: release-please
     if: needs.release-please.outputs.release_created == 'true'
-    runs-on: ubuntu-latest
-    environment:
-      name: pypi
-      url: https://pypi.org/project/todo-jira-sync/
     permissions:
-      id-token: write    # OIDC token for PyPI Trusted Publishing
+      id-token: write
       attestations: write
       contents: read
-    steps:
-      - uses: actions/checkout@v6
-        with:
-          ref: ${{ needs.release-please.outputs.tag_name }}
-          fetch-depth: 0  # setuptools-scm needs full tag history
-
-      - name: Install uv
-        uses: astral-sh/setup-uv@v7
-
-      - name: Build sdist and wheel
-        run: uv build
-
-      - name: Generate SLSA attestations
-        uses: actions/attest-build-provenance@v2
-        with:
-          subject-path: dist/*
-
-      - name: Publish to PyPI
-        uses: pypa/gh-action-pypi-publish@release/v1
-        with:
-          attestations: true
+    uses: ./.github/workflows/publish-pypi.yaml
+    with:
+      tag: ${{ needs.release-please.outputs.tag_name }}
 
   # --------------------------------------------------------------------------
   # 4. publish-docker: build multi-arch image and push to GHCR.
