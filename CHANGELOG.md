@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.5](https://github.com/kalw/todo-jira-sync/compare/v1.0.4...v1.0.5) (2026-05-22)
+
+
+### Bug Fixes
+
+* **ci:** auto-release via PR auto-merge and fix PyPI OIDC via reusable workflow ([658b88c](https://github.com/kalw/todo-jira-sync/commit/658b88c62d04a9e654c93beca609592af11a72fd))
+
 ## [1.0.4](https://github.com/kalw/todo-jira-sync/compare/v1.0.3...v1.0.4) (2026-05-21)
 
 
