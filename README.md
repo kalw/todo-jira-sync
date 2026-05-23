@@ -3,7 +3,7 @@
 Bidirectionally sync a **Jira** project with a **Todo+** plain-text file — the
 format used by the [`vscode-todo-plus`](https://github.com/fabiospampinato/vscode-todo-plus)
 extension. Edit your backlog as a flat, version-controllable text file in your
-editor; run one command; Jira and the file converge.
+editor while having things sync in Jira.
 
 Scaffolded from [`tedivm/robs_awesome_python_template`](https://github.com/tedivm/robs_awesome_python_template)
 conventions (uv, `pyproject.toml`, Typer, Pydantic Settings, Ruff, mypy,
