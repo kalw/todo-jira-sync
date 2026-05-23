@@ -1,37 +1,38 @@
 name: Release
 
 # Triggered by every push to main.
-# release-please maintains a "Release PR"; merging it causes this workflow to:
-#   1. Create the vX.Y.Z tag + GitHub Release
-#   2. Append artifact links to the release body
-#   3. Publish to PyPI  (via reusable publish-pypi.yaml — keeps job_workflow_ref correct)
-#   4. Push to GHCR     (inline — no OIDC issuer constraint from registries)
+# release-please maintains a "Release PR"; when one is detected this workflow:
+#   1. Merges the Release PR immediately (no CI gate needed — it only touches
+#      version.txt + CHANGELOG.md)
+#   2. Creates the vX.Y.Z git tag + GitHub Release via `gh release create`
+#   3. Appends Docker / PyPI artifact links to the release body (annotate job)
+#   4. Publishes to PyPI  (via reusable publish-pypi.yaml — keeps job_workflow_ref)
+#   5. Builds and pushes the multi-arch Docker image to GHCR
 #
-# Auto-release: when release-please opens the Release PR, a step immediately
-# merges it (release PRs only touch version.txt + CHANGELOG) and then
-# explicitly dispatches this workflow on main via workflow_dispatch.
-# This sidesteps GitHub's GITHUB_TOKEN anti-loop rule, which would otherwise
-# prevent the push event from firing when the merge is done by GITHUB_TOKEN.
+# Everything runs in a single workflow execution — no self-dispatch needed.
+# The two-run approach (merge PR → dispatch → release-please detects merge) was
+# abandoned because dispatch-triggered runs fail with "Bad credentials" during
+# release-please's commit-history backfill phase.  Instead, we extract the
+# version from the Release PR title and call `gh release create` ourselves.
 on:
   push:
     branches: [main]
-  workflow_dispatch:  # Allow manual re-run and self-dispatch after Release PR merge
+  workflow_dispatch:  # Allow manual re-runs
 
 permissions:
   contents: write
   pull-requests: write
-  actions: write  # needed for gh workflow run (self-dispatch after Release PR merge)
 
 jobs:
   # --------------------------------------------------------------------------
-  # 1. release-please: open/update the Release PR; on merge → tag + release.
+  # 1. release-please: open/update the Release PR; when one is found, merge it
+  #    immediately and create the tag + GitHub Release in the same run.
   # --------------------------------------------------------------------------
   release-please:
     runs-on: ubuntu-latest
     outputs:
-      release_created: ${{ steps.rp.outputs.release_created }}
-      tag_name:        ${{ steps.rp.outputs.tag_name }}
-      pr:              ${{ steps.rp.outputs.pr }}
+      release_created: ${{ steps.merge_and_release.outputs.release_created || 'false' }}
+      tag_name:        ${{ steps.merge_and_release.outputs.tag_name || '' }}
     steps:
       - uses: googleapis/release-please-action@v4
         id: rp
@@ -40,52 +41,37 @@ jobs:
           release-type: simple
           # release-please's own release-creation REST call consistently returns
           # 403 "Resource not accessible by integration" on this repo, even with
-          # contents:write.  We skip it and create the tag + release ourselves
-          # below with `gh release create`, which uses the same token but via
-          # the gh CLI and works correctly.
+          # contents:write.  We skip it and create the tag + release ourselves.
           skip-github-release: true
 
-      # Create the git tag and GitHub Release using the gh CLI.
-      # release-please still outputs tag_name / release_created even when
-      # skip-github-release is true, so downstream jobs are unaffected.
-      - name: Create GitHub Release
-        id: create_release
-        if: steps.rp.outputs.release_created == 'true'
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TAG: ${{ steps.rp.outputs.tag_name }}
-        run: |
-          # No --target: defaults to the default branch HEAD, which at this point
-          # is the release commit (the workflow only runs this step when
-          # release-please detects a merged Release PR on main).
-          gh release create "$TAG" \
-            --repo "${{ github.repository }}" \
-            --title "$TAG" \
-            --generate-notes
-
-      # Merge the Release PR and re-dispatch this workflow on main.
+      # When release-please opens or updates a Release PR, merge it immediately
+      # and create the git tag + GitHub Release in the same workflow run.
       #
-      # Why re-dispatch?  GitHub blocks workflows from being re-triggered when
-      # a merge is performed by GITHUB_TOKEN (anti-loop protection).  So the
-      # push that lands `chore(main): release X.Y.Z` on main would normally
-      # be invisible to push-event listeners.  We work around this by
-      # explicitly dispatching the workflow after the merge completes.
+      # Why not use the two-run (self-dispatch) approach?
+      # Dispatch-triggered runs fail with "Bad credentials" during release-please's
+      # commit-history backfill phase.  Doing it all in one run avoids this.
       #
-      # --squash without --auto merges immediately; release PRs only touch
-      # version.txt and CHANGELOG.md so no CI gate is needed.  We poll briefly
-      # to confirm GitHub has recorded the merge before dispatching.
-      - name: Merge Release PR and re-dispatch release workflow
+      # Version is parsed from the PR title: "chore(main): release X.Y.Z".
+      - name: Merge Release PR and create release
+        id: merge_and_release
         if: steps.rp.outputs.pr != ''
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_JSON: ${{ steps.rp.outputs.pr }}
         run: |
           pr_number=$(echo "$PR_JSON" | jq -r '.number')
+
+          # Extract version from PR title: "chore(main): release X.Y.Z"
+          pr_title=$(echo "$PR_JSON" | jq -r '.title')
+          version=$(echo "$pr_title" | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')
+          tag="v${version}"
+
+          # Merge the Release PR (squash — it only touches version.txt + CHANGELOG).
           gh pr merge "$pr_number" \
             --repo "${{ github.repository }}" \
             --squash
 
-          # Wait until the PR is confirmed merged (usually instant, cap at 5 min)
+          # Wait until GitHub confirms the merge (usually instant, cap at 5 min).
           for i in $(seq 1 60); do
             state=$(gh pr view "$pr_number" \
               --repo "${{ github.repository }}" \
@@ -94,11 +80,16 @@ jobs:
             sleep 5
           done
 
-          # Dispatch release.yaml on main so release-please can detect the
-          # release commit and create the tag + GitHub Release.
-          gh workflow run release.yaml \
+          # Create the git tag and GitHub Release.
+          # No --target: defaults to the default branch HEAD, which is now the
+          # release merge commit (the loop above confirmed the merge).
+          gh release create "$tag" \
             --repo "${{ github.repository }}" \
-            --ref main
+            --title "$tag" \
+            --generate-notes
+
+          echo "release_created=true"  >> "$GITHUB_OUTPUT"
+          echo "tag_name=$tag"         >> "$GITHUB_OUTPUT"
 
   # --------------------------------------------------------------------------
   # 2. annotate: append Docker / PyPI artifact links to the release body.

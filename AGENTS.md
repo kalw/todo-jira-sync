@@ -163,23 +163,31 @@ opens or updates a **Release PR** titled `chore(main): release X.Y.Z` that:
 - Bumps `version.txt` to the next semver
 - Regenerates `CHANGELOG.md` from the accumulated conventional commits
 
-The Release PR is **merged immediately** by the workflow (release PRs only
-touch `version.txt` and `CHANGELOG.md`, so no CI gate is needed). After
-merging, the workflow dispatches itself again via `workflow_dispatch` — this
-sidesteps GitHub's anti-loop rule that blocks push events when a merge is
-performed by `GITHUB_TOKEN`.
+Everything happens in a **single workflow run** — the Release PR is merged
+immediately, then the same run creates the `vX.Y.Z` tag and GitHub Release,
+annotates the release body, publishes to PyPI, and pushes to GHCR.
 
-The dispatched run of the workflow then:
+Concretely, within the `release-please` job:
 
-1. Creates the `vX.Y.Z` git tag and GitHub Release
-2. Appends Docker/PyPI artifact links to the release body (`annotate` job)
-3. Publishes to PyPI via the `publish-pypi` reusable workflow (`publish-pypi` job)
-4. Builds and pushes the multi-arch Docker image to GHCR (`publish-docker` job)
+1. `googleapis/release-please-action@v4` opens/updates the Release PR and
+   outputs `pr` (the PR JSON) or nothing if no Release PR is pending.
+2. When `pr != ''`, the workflow merges it with `gh pr merge --squash`, waits
+   for confirmation, then calls `gh release create` using the version parsed
+   from the PR title (`chore(main): release X.Y.Z`).
+3. The step sets `release_created=true` and `tag_name=vX.Y.Z` as outputs so
+   the downstream jobs (`annotate`, `publish-pypi`, `publish-docker`) can run.
 
-All jobs run inside `release.yaml`. The separate `publish-pypi.yaml` and
-`publish-docker.yaml` exist **only** for `workflow_dispatch` (manual re-publishes
-of a specific tag) — they have no automatic triggers.
+The separate `publish-pypi.yaml` and `publish-docker.yaml` exist **only** for
+`workflow_dispatch` (manual re-publishes of a specific tag) — they have no
+automatic triggers.
 
+> **Why not the two-run (self-dispatch) approach?**
+> GitHub blocks push events when a merge is done by `GITHUB_TOKEN` (anti-loop
+> protection), so the Release PR merge can't re-fire `on: push`. Using
+> `gh workflow run` (workflow_dispatch) worked around this, but dispatch-triggered
+> runs failed with "Bad credentials" during release-please's commit-history
+> backfill phase. Doing everything in the first (push-triggered) run avoids this.
+>
 > **Why `publish-pypi.yaml` must stay a reusable workflow, not inlined:**
 > PyPI Trusted Publishing validates the OIDC token's `job_workflow_ref` claim.
 > When `release.yaml` calls `uses: ./.github/workflows/publish-pypi.yaml`,
@@ -187,15 +195,6 @@ of a specific tag) — they have no automatic triggers.
 > publisher config (`Workflow: publish-pypi.yaml`). If the steps were inlined,
 > `job_workflow_ref` would be `release.yaml` and PyPI would reject the token.
 > Never inline the PyPI publish steps into release.yaml.
->
-> **Why `workflow_dispatch` instead of auto-merge + push event?**
-> GitHub blocks workflows from being re-triggered when a merge is performed by
-> `GITHUB_TOKEN` (anti-loop protection). This applies to both the direct merge
-> done by `gh pr merge` and the auto-merge mechanism. Using `workflow_dispatch`
-> to self-call the workflow on main is the only reliable way to continue the
-> pipeline after a `GITHUB_TOKEN`-owned merge.
-> Never rely on `push: tags: v*` or `release: published` for automatic
-> publishing — both are silently dead when release-please creates the tag/release.
 
 **Do not** create version tags or GitHub Releases by hand.
 
