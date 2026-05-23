@@ -39,6 +39,7 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           release-type: simple
+          default-branch: main
 
       # Merge the Release PR and re-dispatch this workflow on main.
       #
