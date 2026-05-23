@@ -40,6 +40,28 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           release-type: simple
           default-branch: main
+          # release-please's own release-creation REST call consistently returns
+          # 403 "Resource not accessible by integration" on this repo, even with
+          # contents:write.  We skip it and create the tag + release ourselves
+          # below with `gh release create`, which uses the same token but via
+          # the gh CLI and works correctly.
+          skip-github-release: true
+
+      # Create the git tag and GitHub Release using the gh CLI.
+      # release-please still outputs tag_name / release_created even when
+      # skip-github-release is true, so downstream jobs are unaffected.
+      - name: Create GitHub Release
+        id: create_release
+        if: steps.rp.outputs.release_created == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ steps.rp.outputs.tag_name }}
+        run: |
+          gh release create "$TAG" \
+            --repo "${{ github.repository }}" \
+            --title "$TAG" \
+            --generate-notes \
+            --target "${{ github.sha }}"
 
       # Merge the Release PR and re-dispatch this workflow on main.
       #
