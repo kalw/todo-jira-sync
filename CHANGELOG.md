@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.7](https://github.com/kalw/todo-jira-sync/compare/v1.0.6...v1.0.7) (2026-05-23)
+
+
+### Bug Fixes
+
+* **ci:** add actions:write permission for workflow self-dispatch ([d2e5d10](https://github.com/kalw/todo-jira-sync/commit/d2e5d1075f09f880ca5bce8334af37c1c2089af9))
+
 ## [1.0.6](https://github.com/kalw/todo-jira-sync/compare/v1.0.5...v1.0.6) (2026-05-23)
 
 
