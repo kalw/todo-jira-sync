@@ -57,11 +57,13 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAG: ${{ steps.rp.outputs.tag_name }}
         run: |
+          # No --target: defaults to the default branch HEAD, which at this point
+          # is the release commit (the workflow only runs this step when
+          # release-please detects a merged Release PR on main).
           gh release create "$TAG" \
             --repo "${{ github.repository }}" \
             --title "$TAG" \
-            --generate-notes \
-            --target "${{ github.sha }}"
+            --generate-notes
 
       # Merge the Release PR and re-dispatch this workflow on main.
       #
