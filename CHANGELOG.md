@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.1](https://github.com/kalw/todo-jira-sync/compare/v1.1.0...v1.1.1) (2026-05-23)
+
+
+### Bug Fixes
+
+* readme update ([dbee5c0](https://github.com/kalw/todo-jira-sync/commit/dbee5c0ee10808b81cff39e5c45d99c42d4aee13))
+
 ## [1.1.0](https://github.com/kalw/todo-jira-sync/compare/v1.0.7...v1.1.0) (2026-05-23)
 
 
