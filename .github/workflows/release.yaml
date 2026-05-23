@@ -17,9 +17,7 @@ on:
     branches: [main]
   workflow_dispatch:  # Allow manual re-run and self-dispatch after Release PR merge
 
-permissions:
-  contents: write
-  pull-requests: write
+permissions: {}
 
 jobs:
   # --------------------------------------------------------------------------
@@ -89,6 +87,8 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      pull-requests: write
+      id-token: write
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       TAG:  ${{ needs.release-please.outputs.tag_name }}
