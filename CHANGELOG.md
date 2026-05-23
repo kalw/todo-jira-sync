@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.0.6](https://github.com/kalw/todo-jira-sync/compare/v1.0.5...v1.0.6) (2026-05-23)
+
+
+### Bug Fixes
+
+* Add default-branch parameter to release workflow ([b31359e](https://github.com/kalw/todo-jira-sync/commit/b31359e424ad783115948a54a561e95daea63cc1))
+* Add id-token permission to release workflow ([4fb7c3e](https://github.com/kalw/todo-jira-sync/commit/4fb7c3e1c474263f604067d0804fb62b48eefa9c))
+* Add permissions for release-please in workflow ([ece88c5](https://github.com/kalw/todo-jira-sync/commit/ece88c57fc0d93f16181f010f48a94e0e88d08be))
+* **ci:** bypass release-please release creation with gh release create ([f481eae](https://github.com/kalw/todo-jira-sync/commit/f481eae67c13428911a9d19d90b5fba3f3429086))
+* **ci:** clean up release.yaml permissions and invalid inputs ([c75d264](https://github.com/kalw/todo-jira-sync/commit/c75d2643955a250fa575f99c90639030f05e33af))
+* **ci:** remove --target from gh release create to avoid scope error ([c364d97](https://github.com/kalw/todo-jira-sync/commit/c364d97264855699f6d0a7287e3d54ad22630aa0))
+* **ci:** self-dispatch release workflow after Release PR merge ([575666e](https://github.com/kalw/todo-jira-sync/commit/575666ef4c3fd35f2ed8107b76475f9b9256b099))
+* Modify permissions in release.yaml workflow ([420e304](https://github.com/kalw/todo-jira-sync/commit/420e304444d50323f6bcc3dc77f191e27b0ca01d))
+
 ## [1.0.5](https://github.com/kalw/todo-jira-sync/compare/v1.0.4...v1.0.5) (2026-05-22)
 
 
