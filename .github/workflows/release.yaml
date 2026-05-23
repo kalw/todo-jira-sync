@@ -17,7 +17,9 @@ on:
     branches: [main]
   workflow_dispatch:  # Allow manual re-run and self-dispatch after Release PR merge
 
-permissions: {}
+permissions:
+  contents: write
+  pull-requests: write
 
 jobs:
   # --------------------------------------------------------------------------
@@ -25,10 +27,6 @@ jobs:
   # --------------------------------------------------------------------------
   release-please:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      pull-requests: write
-      id-token: write
     outputs:
       release_created: ${{ steps.rp.outputs.release_created }}
       tag_name:        ${{ steps.rp.outputs.tag_name }}
@@ -39,7 +37,6 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           release-type: simple
-          default-branch: main
           # release-please's own release-creation REST call consistently returns
           # 403 "Resource not accessible by integration" on this repo, even with
           # contents:write.  We skip it and create the tag + release ourselves
@@ -112,8 +109,6 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-      pull-requests: write
-      id-token: write
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       TAG:  ${{ needs.release-please.outputs.tag_name }}
