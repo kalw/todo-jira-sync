@@ -20,6 +20,7 @@ on:
 permissions:
   contents: write
   pull-requests: write
+  actions: write  # needed for gh workflow run (self-dispatch after Release PR merge)
 
 jobs:
   # --------------------------------------------------------------------------
