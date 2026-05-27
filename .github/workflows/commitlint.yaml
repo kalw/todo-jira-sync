@@ -15,7 +15,7 @@ jobs:
           fetch-depth: 0  # full history so every commit in the PR is reachable
 
       - name: Lint commits
-        uses: wagoid/commitlint-github-action@v5
+        uses: wagoid/commitlint-github-action@v6
         with:
           configFile: .commitlintrc.yaml
           helpURL: https://www.conventionalcommits.org/
