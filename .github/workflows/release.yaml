@@ -164,21 +164,41 @@ jobs:
           PYEOF
 
   # --------------------------------------------------------------------------
-  # 3. publish-pypi: delegate to the reusable workflow.
-  #    Using `uses:` sets job_workflow_ref → publish-pypi.yaml in the OIDC
-  #    token, which is what the PyPI Trusted Publisher config expects.
+  # 3. publish-pypi: inline (reusable workflows not supported by PyPI OIDC).
   # --------------------------------------------------------------------------
   publish-pypi:
     name: Publish to PyPI
     needs: release-please
     if: needs.release-please.outputs.release_created == 'true'
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/project/todo-jira-sync/
     permissions:
       id-token: write
       attestations: write
       contents: read
-    uses: ./.github/workflows/publish-pypi.yaml
-    with:
-      tag: ${{ needs.release-please.outputs.tag_name }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.release-please.outputs.tag_name }}
+          fetch-depth: 0
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+
+      - name: Build sdist and wheel
+        run: uv build
+
+      - name: Generate SLSA attestations
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: dist/*
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          attestations: true
 
   # --------------------------------------------------------------------------
   # 4. publish-docker: build multi-arch image and push to GHCR.
