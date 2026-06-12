@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.2](https://github.com/kalw/todo-jira-sync/compare/v1.1.1...v1.1.2) (2026-06-12)
+
+
+### Bug Fixes
+
+* Inline publish to PyPI workflow steps ([0f6e1d5](https://github.com/kalw/todo-jira-sync/commit/0f6e1d55f2dbfbaf3575419f0d95fee7705d68d5))
+
 ## [1.1.1](https://github.com/kalw/todo-jira-sync/compare/v1.1.0...v1.1.1) (2026-05-23)
 
 
