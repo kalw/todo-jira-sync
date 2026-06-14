@@ -80,6 +80,13 @@ jobs:
             sleep 5
           done
 
+          # Swap the release-please label so the next run doesn't abort with
+          # "untagged merged release PRs outstanding".
+          gh pr edit "$pr_number" \
+            --repo "${{ github.repository }}" \
+            --remove-label "autorelease: pending" \
+            --add-label "autorelease: tagged"
+
           # Create the git tag and GitHub Release.
           # No --target: defaults to the default branch HEAD, which is now the
           # release merge commit (the loop above confirmed the merge).
