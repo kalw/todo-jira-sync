@@ -1,0 +1,171 @@
+{
+  "version": "2.0.0",
+
+  // ---------------------------------------------------------------------------
+  // Secrets strategy
+  // ---------------------------------------------------------------------------
+  // Preferred: copy .env.example → .env and fill in your credentials.
+  //   The app reads .env automatically (pydantic-settings); nothing else needed.
+  //
+  // Fallback: if .env is absent, tasks marked [needs .env] fall back to
+  //   VS Code's password prompt via ${input:jiraApiToken} / ${input:jiraEmail}.
+  //   The prompted values are kept in memory for the VS Code session only.
+  //
+  // Non-secret settings (URL, project key, todo file path) can be set
+  //   workspace-wide in .vscode/settings.json under "terminal.integrated.env.*"
+  //   so they apply to every task and integrated terminal without touching .env.
+  // ---------------------------------------------------------------------------
+
+  "inputs": [
+    {
+      "id": "jiraApiToken",
+      "type": "promptString",
+      "description": "Jira API token (tip: put this in .env to avoid re-entering)",
+      "password": true
+    },
+    {
+      "id": "jiraEmail",
+      "type": "promptString",
+      "description": "Jira account email (basic auth / Cloud only)",
+      "password": false
+    }
+  ],
+
+  "tasks": [
+    // -------------------------------------------------------------------------
+    // Sync tasks
+    // -------------------------------------------------------------------------
+    {
+      "label": "todo-jira: sync",
+      "detail": "Bidirectional sync — push local changes to Jira and pull Jira changes to file",
+      "type": "shell",
+      "command": "uv run todo-jira-sync sync",
+      "group": "build",
+      "presentation": { "reveal": "always", "panel": "shared", "clear": true },
+      "problemMatcher": []
+    },
+    {
+      "label": "todo-jira: push",
+      "detail": "One-way: local todo file → Jira (never edits the file)",
+      "type": "shell",
+      "command": "uv run todo-jira-sync push",
+      "group": "build",
+      "presentation": { "reveal": "always", "panel": "shared", "clear": true },
+      "problemMatcher": []
+    },
+    {
+      "label": "todo-jira: pull",
+      "detail": "One-way: Jira → local todo file",
+      "type": "shell",
+      "command": "uv run todo-jira-sync pull",
+      "group": "build",
+      "presentation": { "reveal": "always", "panel": "shared", "clear": true },
+      "problemMatcher": []
+    },
+    {
+      "label": "todo-jira: status",
+      "detail": "Dry run — show what a bidirectional sync would do without writing anything",
+      "type": "shell",
+      "command": "uv run todo-jira-sync status",
+      "group": "build",
+      "presentation": { "reveal": "always", "panel": "shared", "clear": true },
+      "problemMatcher": []
+    },
+
+    // -------------------------------------------------------------------------
+    // Sync tasks — credential prompt fallback (use when .env is not set up)
+    // -------------------------------------------------------------------------
+    {
+      "label": "todo-jira: sync (prompt credentials)",
+      "detail": "Bidirectional sync — prompts for API token and email each session",
+      "type": "shell",
+      "command": "uv run todo-jira-sync sync",
+      "env": {
+        "JIRA_API_TOKEN": "${input:jiraApiToken}",
+        "JIRA_EMAIL": "${input:jiraEmail}"
+      },
+      "group": "build",
+      "presentation": { "reveal": "always", "panel": "shared", "clear": true },
+      "problemMatcher": []
+    },
+
+    // -------------------------------------------------------------------------
+    // Setup
+    // -------------------------------------------------------------------------
+    {
+      "label": "todo-jira: create .env",
+      "detail": "Copy .env.example → .env so you can fill in your credentials",
+      "type": "shell",
+      "command": "[ -f .env ] && echo '.env already exists — edit it directly.' || (cp .env.example .env && echo 'Created .env — open it and fill in JIRA_URL, JIRA_EMAIL, JIRA_API_TOKEN.')",
+      "presentation": { "reveal": "always", "panel": "shared", "clear": true },
+      "problemMatcher": []
+    },
+    {
+      "label": "todo-jira: install",
+      "detail": "Create venv and install in editable mode with dev extras (uv)",
+      "type": "shell",
+      "command": "uv venv && uv pip install -e '.[dev]'",
+      "presentation": { "reveal": "always", "panel": "shared", "clear": true },
+      "problemMatcher": []
+    },
+
+    // -------------------------------------------------------------------------
+    // Dev — quality
+    // -------------------------------------------------------------------------
+    {
+      "label": "dev: lint",
+      "type": "shell",
+      "command": "uv run ruff check .",
+      "group": "test",
+      "presentation": { "reveal": "always", "panel": "shared", "clear": true },
+      "problemMatcher": {
+        "owner": "ruff",
+        "fileLocation": ["relative", "${workspaceFolder}"],
+        "pattern": {
+          "regexp": "^(.+):(\\d+):(\\d+): (\\w+) (.+)$",
+          "file": 1, "line": 2, "column": 3, "severity": 4, "message": 5
+        }
+      }
+    },
+    {
+      "label": "dev: format",
+      "type": "shell",
+      "command": "uv run ruff check --fix . && uv run ruff format .",
+      "group": "test",
+      "presentation": { "reveal": "always", "panel": "shared", "clear": true },
+      "problemMatcher": []
+    },
+    {
+      "label": "dev: typecheck",
+      "type": "shell",
+      "command": "uv run mypy todo_jira_sync",
+      "group": "test",
+      "presentation": { "reveal": "always", "panel": "shared", "clear": true },
+      "problemMatcher": {
+        "owner": "mypy",
+        "fileLocation": ["relative", "${workspaceFolder}"],
+        "pattern": {
+          "regexp": "^(.+):(\\d+): (error|warning|note): (.+)$",
+          "file": 1, "line": 2, "severity": 3, "message": 4
+        }
+      }
+    },
+    {
+      "label": "dev: test",
+      "type": "shell",
+      "command": "uv run pytest",
+      "group": { "kind": "test", "isDefault": true },
+      "presentation": { "reveal": "always", "panel": "shared", "clear": true },
+      "problemMatcher": []
+    },
+    {
+      "label": "dev: check all",
+      "detail": "lint + typecheck + test",
+      "type": "shell",
+      "command": "make check",
+      "group": "test",
+      "presentation": { "reveal": "always", "panel": "shared", "clear": true },
+      "problemMatcher": []
+    }
+  ]
+}
