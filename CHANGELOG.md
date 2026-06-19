@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.0](https://github.com/kalw/todo-jira-sync/compare/v1.1.2...v1.2.0) (2026-06-19)
+
+
+### Features
+
+* **vscode:** add tasks, workspace settings, and secrets guidance ([7472af3](https://github.com/kalw/todo-jira-sync/commit/7472af340cc8186005baa236675c47f4bb7701c4))
+
 ## [1.1.2](https://github.com/kalw/todo-jira-sync/compare/v1.1.1...v1.1.2) (2026-06-12)
 
 
