@@ -1,0 +1,68 @@
+{
+  // ---------------------------------------------------------------------------
+  // Workspace-level env vars injected into every integrated terminal and task.
+  //
+  // Put NON-SECRET settings here (URL, project key, file path).
+  // Put SECRETS (JIRA_API_TOKEN, JIRA_EMAIL) in .env instead — it is gitignored
+  // and read automatically by the app.  Run "todo-jira: create .env" from the
+  // command palette (⇧⌘P → Tasks: Run Task) to bootstrap it from .env.example.
+  //
+  // To override per-machine without touching this file, copy this section into
+  // .vscode/settings.local.json (gitignored) — VS Code does not auto-merge them,
+  // so use "Preferences: Open User Settings (JSON)" or a workspace override.
+  // ---------------------------------------------------------------------------
+
+  // --- Connection (non-secret) -----------------------------------------------
+  "terminal.integrated.env.osx": {
+    "JIRA_URL": "https://your-domain.atlassian.net",
+    "JIRA_AUTH": "basic",
+
+    // --- What to sync --------------------------------------------------------
+    "JIRA_PROJECT": "YOUR_PROJECT",
+    "TODO_FILE": "${workspaceFolder}/todo.todo",
+
+    // --- Behaviour -----------------------------------------------------------
+    "CONFLICT": "jira",
+    "PULL_LOCALLY_DELETED": "false"
+  },
+  "terminal.integrated.env.linux": {
+    "JIRA_URL": "https://your-domain.atlassian.net",
+    "JIRA_AUTH": "basic",
+    "JIRA_PROJECT": "YOUR_PROJECT",
+    "TODO_FILE": "${workspaceFolder}/todo.todo",
+    "CONFLICT": "jira",
+    "PULL_LOCALLY_DELETED": "false"
+  },
+  "terminal.integrated.env.windows": {
+    "JIRA_URL": "https://your-domain.atlassian.net",
+    "JIRA_AUTH": "basic",
+    "JIRA_PROJECT": "YOUR_PROJECT",
+    "TODO_FILE": "${workspaceFolder}/todo.todo",
+    "CONFLICT": "jira",
+    "PULL_LOCALLY_DELETED": "false"
+  },
+
+  // ---------------------------------------------------------------------------
+  // Todo+ extension settings
+  // ---------------------------------------------------------------------------
+  "todo-plus.file.defaultPath": "${workspaceFolder}/todo.todo",
+  "todo-plus.statistics.enabled": true,
+
+  // ---------------------------------------------------------------------------
+  // Editor — associate .todo and .todojira.json with the right language modes
+  // ---------------------------------------------------------------------------
+  "files.associations": {
+    "*.todo": "todo",
+    "*.todojira.json": "json",
+    ".env.example": "dotenv",
+    ".env": "dotenv"
+  },
+  "files.exclude": {
+    "**/*.todojira.json": true
+  },
+
+  // ---------------------------------------------------------------------------
+  // Python / uv
+  // ---------------------------------------------------------------------------
+  "python.defaultInterpreterPath": "${workspaceFolder}/.venv/bin/python"
+}

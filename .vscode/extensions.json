@@ -1,0 +1,17 @@
+{
+  "recommendations": [
+    // Todo+ — the file format this tool syncs
+    "fabiospampinato.vscode-todo-plus",
+
+    // Python toolchain
+    "ms-python.python",
+    "ms-python.mypy-type-checker",
+    "charliermarsh.ruff",
+
+    // .env file syntax highlighting and autocompletion
+    "mikestead.dotenv",
+
+    // Run tasks quickly from the status bar
+    "actboy168.tasks"
+  ]
+}

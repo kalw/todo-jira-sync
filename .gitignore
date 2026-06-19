@@ -22,6 +22,6 @@ venv/
 *.todojira.json
 
 # Editors / OS
-.vscode/
+.vscode/*.local*       # machine-specific overrides — commit tasks/settings/extensions
 .idea/
 .DS_Store
